@@ -11,14 +11,14 @@
   padding: 12px 20px;
   border-radius: 10px;
   margin: 10px 15px;
-  background: rgba(189, 127, 127, 0.05);
-  color: #02556a;
-  border: 1px solid rgba(213, 182, 182, 0.1);
+  background: rgba(199, 42, 42, 0.05);
+  color: #b5cf35;
+  border: 1px solid rgba(143, 24, 24, 0.1);
 }
 
 .theme-switch-item:hover {
   background: rgba(217, 75, 75, 0.1);
-  border-color: #4bc0d9;
+  border-color: #0c4c62;
 }
 
 .theme-switch-item i {
@@ -158,8 +158,8 @@ header a { transition: .3s; }
 
 /* ── modo claro adaptativo para el flujo de reservas ── */
 body.theme-light .booking-wrap {
-  --bg-card-dark: #ffffff;                       /* Fondo blanco limpio y elegante */
-  --bg-input-dark: #f8fafc;                      /* Cajas internas limpias */
+  --bg-card-dark: #1f117a;                       /* Fondo blanco limpio y elegante */
+  --bg-input-dark: #051a30;                      /* Cajas internas limpias */
   --bg-input-hover: rgba(34, 174, 209, 0.08);
   --color-azul: #0f172a;                    /* Títulos en slate oscuro */
   --text-muted: #64748b;                        /* Gris pizarra elegante */
@@ -4584,3 +4584,35 @@ ul.errorlist li + li {
 [aria-invalid="true"]:focus {
   box-shadow: 0 0 0 0.2rem rgba(192, 57, 74, 0.18) !important;
 }
+  /* animacion y fondo de panel*/
+
+  .badge-status-confirmada {
+    background-color: #0f3822 !important;
+    color: #4ade80 !important;
+    border: 1px solid #166534 !important;
+  }
+  .badge-status-reservada {
+    background-color: #422006 !important;
+    color: #fde047 !important;
+    border: 1px solid #854d0e !important;
+  }
+  .badge-status-pendiente {
+    background-color: #451a03 !important;
+    color: #fdba74 !important;
+    border: 1px solid #9a3412 !important;
+  }
+  .badge-status-cancelada {
+    background-color: #450a0a !important;
+    color: #fca5a5 !important;
+    border: 1px solid #991b1b !important;
+  }
+  .badge-status-completada {
+    background-color: #172554 !important;
+    color: #93c5fd !important;
+    border: 1px solid #1e40af !important;
+  }
+  .badge-status-default {
+    background-color: #27272a !important;
+    color: #e4e4e7 !important;
+    border: 1px solid #52525b !important;
+  }

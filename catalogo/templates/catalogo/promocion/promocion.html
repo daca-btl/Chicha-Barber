@@ -29,7 +29,7 @@
         <!-- ENCABEZADO PRINCIPAL -->
         <div class="text-center mb-4">
             <h1 class="display-4 fw-bold text-uppercase text-warning mb-2 font-heading">
-                <i class="bi bi-tags-fill me-2"></i>Nuestras Promociones
+                <i></i>Nuestras Promociones
             </h1>
             <p class="fs-5 text-light opacity-75 mb-3">
                 Descubre nuestras ofertas especiales y ahorra en tus servicios y productos preferidos.
@@ -37,14 +37,45 @@
             <hr class="w-25 mx-auto text-warning opacity-50 my-2" style="border-width: 2px;">
         </div>
 
+        <!-- BUSCADOR MÁS PEQUEÑO Y COMPACTO -->
+        <div class="row mb-4 justify-content-center">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="search-box-wrapper position-relative p-1 rounded-pill">
+                    <div class="input-group search-input-group bg-black bg-opacity-80 rounded-pill border border-warning border-opacity-25 shadow-sm overflow-hidden">
+                        
+                        <!-- Icono de Búsqueda -->
+                        <span class="input-group-text bg-transparent border-0 text-warning fs-6 ps-3 pe-2">
+                            <i class="bi bi-search search-icon"></i>
+                        </span>
+                        
+                        <!-- Campo de Texto -->
+                        <input type="text" id="buscador-unico" class="form-control bg-transparent text-light border-0 shadow-none small py-1" placeholder="Buscar..." autocomplete="off">
+                        
+                        <!-- Botón para Limpiar Texto -->
+                        <button class="btn btn-transparent text-white-50 border-0 pe-2 d-none" type="button" id="btn-limpiar" title="Limpiar búsqueda">
+                            <i class="bi bi-x-circle-fill hover-gold"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensaje cuando la búsqueda no produce resultados -->
+        <div id="no-results" class="col-12 text-center py-4 d-none">
+            <i class="bi bi-search-heart display-4 text-warning mb-2 d-block"></i>
+            <h5 class="text-warning fw-bold">No se encontraron coincidencias</h5>
+            <p class="text-light opacity-75 small">Prueba escribiendo otra palabra o un precio diferente.</p>
+        </div>
+
         <!-- LISTADO DE PROMOCIONES EN REJILLA -->
         <div class="row g-4 justify-content-center align-items-stretch">
 
             {% for promocion in promociones %}
 
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex align-items-stretch">
+                <!-- SE AGREGÓ LA CLASE 'buscar-item' AQUÍ -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex align-items-stretch buscar-item">
 
-                    <!-- Tarjeta de Promoción (Diseño idéntico a Servicios y Productos) -->
+                    <!-- Tarjeta de Promoción -->
                     <div class="card bg-black bg-opacity-75 text-white border border-secondary border-opacity-25 rounded-4 shadow-lg overflow-hidden w-100 d-flex flex-column justify-content-between hover-scale">
 
                         <!-- Imagen en Proporción 1:1 -->
@@ -54,11 +85,6 @@
                                  class="w-100 h-100 object-fit-cover"
                                  alt="{{ promocion.nombre }}"
                                  onerror="this.onerror=null; this.src='{% static 'img/Fondo.png' %}';">
-
-                            <!-- Badge Flotante del Porcentaje de Descuento -->
-                            <span class="badge bg-warning text-dark fw-bold position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill shadow-sm fs-7 style-z-index">
-                                {{ promocion.porcentaje_descuento|floatformat:0 }}% OFF
-                            </span>
 
                             <!-- Sombras integradas -->
                             <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient"></div>
@@ -78,7 +104,7 @@
                                 {% endif %}
                             </div>
 
-                            <!-- Título de la Promoción (Altura mínima igualada) -->
+                            <!-- Título de la Promoción -->
                             <div class="mb-2 d-flex align-items-center justify-content-center" style="min-height: 44px;">
                                 <h5 class="fw-bold text-warning text-uppercase font-heading mb-0 fs-6 text-truncate-2">
                                     {{ promocion.nombre }}
@@ -103,7 +129,7 @@
 
                                 <div class="text-white-50 fs-8 fw-semibold text-truncate">
                                     {% if promocion.codigo_servicio %}
-                                        <i class="bi bi-clock me-1 text-warning"></i>{{ promocion.codigo_servicio.duracion }} min
+                                        <i class="bi bi-clock me-1 text-warning"></i>{{ promocion.codigo_servicio }} min
                                     {% elif promocion.codigo_producto %}
                                         <i class="bi bi-box-seam me-1 text-warning"></i>{{ promocion.codigo_producto.nombre|truncatechars:18 }}
                                     {% else %}
@@ -165,57 +191,68 @@
     </div>
 </div>
 
-
 <!-- ==========================================================
-     ESTILOS CSS AUXILIARES
-========================================================== -->
-<style>
-    .fs-7 { font-size: 0.8rem; }
-    .fs-8 { font-size: 0.72rem; }
-
-    .text-truncate-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .style-z-index {
-        z-index: 1050;
-    }
-
-    /* EFECTO HOVER IGUAL AL DE SERVICIOS Y PRODUCTOS */
-    .hover-scale {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .hover-scale:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
-    }
-</style>
-
-
-<!-- ==========================================================
-     SCRIPT DE VALIDACIÓN DE LOGIN
+     SCRIPTS
 ========================================================== -->
 <script>
+// Validación de inicio de sesión
 function gestionarSeleccion(event) {
     var estaAutenticado = {{ user.is_authenticated|yesno:"true,false" }};
 
     if (!estaAutenticado) {
         event.preventDefault();
-
         alert("🎁 ¡Atención! Debes iniciar sesión para acceder a nuestras promociones.");
-
-        window.location.href =
-            "{% url 'login' %}?next=" +
-            encodeURIComponent(window.location.pathname);
-
+        window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(window.location.pathname);
         return false;
     }
-
     return true;
 }
+
+// Lógica de filtrado en tiempo real para el buscador
+document.addEventListener('DOMContentLoaded', () => {
+    const inputBuscador = document.getElementById('buscador-unico');
+    const btnLimpiar = document.getElementById('btn-limpiar');
+    const noResultsMsg = document.getElementById('no-results');
+
+    function filtrarElementos() {
+        const textoBusqueda = inputBuscador.value.trim().toLowerCase();
+        const elementos = document.querySelectorAll('.buscar-item');
+        let coincidencias = 0;
+
+        // Mostrar u ocultar el botón 'X'
+        if (textoBusqueda.length > 0) {
+            btnLimpiar.classList.remove('d-none');
+        } else {
+            btnLimpiar.classList.add('d-none');
+        }
+
+        // Evaluar cada tarjeta de promoción
+        elementos.forEach(item => {
+            const contenido = item.textContent.toLowerCase();
+            if (contenido.includes(textoBusqueda)) {
+                item.classList.remove('d-none');
+                coincidencias++;
+            } else {
+                item.classList.add('d-none');
+            }
+        });
+
+        // Mostrar mensaje si no hay resultados
+        if (coincidencias === 0 && elementos.length > 0) {
+            noResultsMsg.classList.remove('d-none');
+        } else {
+            noResultsMsg.classList.add('d-none');
+        }
+    }
+
+    inputBuscador.addEventListener('input', filtrarElementos);
+
+    btnLimpiar.addEventListener('click', () => {
+        inputBuscador.value = '';
+        filtrarElementos();
+        inputBuscador.focus();
+    });
+});
 </script>
 
 {% endblock %}

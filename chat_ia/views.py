@@ -5,6 +5,7 @@ from catalogo.models import Producto, Categoria, Promocion
 
 MENSAJE_BIENVENIDA = "¡Hola! 👋 Soy **ChichaBot**, tu asistente virtual de **Chicha Barber Studio**.\n\nEstoy aquí para ayudarte con:\n• 📅 Agendar citas\n• 🛒 ventar productos\n• 💇 Servicios disponibles\n• ❓ Cualquier duda sobre la barbería\n\n¿En qué puedo ayudarte hoy?"
 
+
 def construir_contexto_dinamico():
     """Construye un contexto con datos reales de la BD para que la IA responda con info actualizada."""
     servicios = Servicios.objects.filter(estado=True)

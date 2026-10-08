@@ -1,16 +1,16 @@
 {% extends "base-admin.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-<div class="container-fluid py-5">
+<div class="container-fluid py-5 ">
   <div class="row justify-content-center">
     <div class="col-lg-8">
       <div class="card color-champaña text-dark border-0 shadow-sm overflow-hidden mb-4">
         
-        <div class="card-header py-3 border-0 bg-transparent">
+        <div class="card-header py-3 border-0 bg-transparent text-dark text-light">
           <h5 class="mb-0 fw-bold text-center text-dark">Formulario de Registro</h5>
         </div>
         
-        <div class="card-body p-4 bg-white">
+        <div class="card-body p-4 bg-white text-dark">
           <div class="inputs-limpios">
             <form method="POST" enctype="multipart/form-data">
               {% csrf_token %}

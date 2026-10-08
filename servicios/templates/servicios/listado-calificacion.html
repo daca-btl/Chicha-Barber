@@ -2,125 +2,150 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-        <div class="d-flex justify-content-end align-items-center mb-4 ">
-        <a href="{% url 'listado-calificacion' %}" class="btn custom-btn fw-bold">
-          
-        </a>
-    </div>
+<!-- Contenedor principal con fondo oscuro -->
+<div class="container-fluid px-4 py-4 bg-dark text-light min-vh-100" style="background-color: #121316 !important;">
 
-    <div class="row g-3 mb-4">
+    
+
+    <!-- TARJETAS DE MÉTRICAS -->
+    <div class="row g-3 mb-4 card-hover-effect:hover card-hover-effect">
         <!-- Total Calificaciones -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border border-dark border-opacity-10 card-hover-effect">
-                <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary bg-opacity-10 border border-primary border-opacity-25" style="width:48px;height:48px;">
-                            <i class="bi bi-star text-primary fs-5"></i>
-                        </div>
-                        <span class="text-dark opacity-75 small text-uppercase fw-bold mb-0">Total Calificaciones</span>
-                    </div>
-                    <h2 class="fw-bold mb-0 text-primary">{{ total_calificaciones|default:"0" }}</h2>
+        <div class="col-md-4 card-hover-effect:hover card-hover-effect">
+            <div class="p-3 rounded-3 d-flex align-items-center justify-content-between border border-secondary border-opacity-25" style="background-color: #1a1c23;">
+                <div>
+                    <span class="text-uppercase text-muted fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Calificaciones</span>
+                    <h2 class="fw-bold text-white mb-0 mt-1">{{ total_calificaciones|default:"0" }}</h2>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Positivas -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border border-dark border-opacity-10 card-hover-effect">
-                <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-success bg-opacity-10 border border-success border-opacity-25" style="width:48px;height:48px;">
-                            <i class="bi bi-hand-thumbs-up text-success fs-5"></i>
-                        </div>
-                        <span class="text-dark opacity-75 small text-uppercase fw-bold mb-0">Calificaciones Positivas</span>
-                    </div>
-                    <h2 class="fw-bold mb-0 text-success">{{ positivas|default:"0" }}</h2>
+                <div class="rounded-3 d-flex align-items-center justify-content-center text-primary" style="width: 48px; height: 48px; background-color: rgba(13, 110, 253, 0.15);">
+                    <i class="bi bi-star fs-4"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Negativas -->
+        <!-- Calificaciones Positivas -->
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border border-dark border-opacity-10 card-hover-effect">
-                <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger bg-opacity-10 border border-danger border-opacity-25" style="width:48px;height:48px;">
-                            <i class="bi bi-hand-thumbs-down text-danger fs-5"></i>
-                        </div>
-                        <span class="text-dark opacity-75 small text-uppercase fw-bold mb-0">Calificaciones Negativas</span>
-                    </div>
-                    <h2 class="fw-bold mb-0 text-danger">{{ negativas|default:"0" }}</h2>
+            <div class="p-3 rounded-3 d-flex align-items-center justify-content-between border border-secondary border-opacity-25" style="background-color: #1a1c23;">
+                <div>
+                    <span class="text-uppercase text-muted fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">Calificaciones Positivas</span>
+                    <h2 class="fw-bold text-success mb-0 mt-1">{{ positivas|default:"0" }}</h2>
+                </div>
+                <div class="rounded-3 d-flex align-items-center justify-content-center text-success" style="width: 48px; height: 48px; background-color: rgba(25, 135, 84, 0.15);">
+                    <i class="bi bi-hand-thumbs-up-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calificaciones Negativas -->
+        <div class="col-md-4">
+            <div class="p-3 rounded-3 d-flex align-items-center justify-content-between border border-secondary border-opacity-25" style="background-color: #1a1c23;">
+                <div>
+                    <span class="text-uppercase text-muted fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">Calificaciones Negativas</span>
+                    <h2 class="fw-bold text-danger mb-0 mt-1">{{ negativas|default:"0" }}</h2>
+                </div>
+                <div class="rounded-3 d-flex align-items-center justify-content-center text-danger" style="width: 48px; height: 48px; background-color: rgba(220, 53, 69, 0.15);">
+                    <i class="bi bi-hand-thumbs-down-fill fs-4"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card bg-white text-dark shadow border-0 mb-4">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table id="tablaCalificaciones" class="table table-hover align-middle mb-0 w-100 text-dark">
-                    <thead class="thead-azul text-white"> <tr>
-                            <th scope="col" class="ps-4">Servicio</th>
-                            <th scope="col">Cliente</th>
-                            <th scope="col" class="text-center">Puntuación</th>
-                            <th scope="col">Comentario</th>
-                            <th scope="col" class="text-center">Estado Respuesta</th>
-                            <th scope="col" class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for calificacion in calificaciones %}
-                        <tr>
-                            <td class="ps-4">
-                                <h6 class="mb-0 fw-bold text-dark">{{ calificacion.servicio.nombre }}</h6>
-                            </td>
-                            <td>{{ calificacion.cliente.get_full_name|default:calificacion.cliente_nombre }}</td>
-                            <td class="text-center">
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= calificacion.puntuacion %}
-                                        <i class="bi bi-star-fill text-warning"></i>
-                                    {% else %}
-                                        <i class="bi bi-star text-secondary opacity-50"></i>
-                                    {% endif %}
-                                {% endfor %}
-                            </td>
-                            <td>{{ calificacion.comentario|truncatechars:50 }}</td>
-                            <td class="text-center">
-                                {% if calificacion.respuesta %}
-                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Respondida</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                <a href="{% url 'responder-calificacion' calificacion.pk %}" class="btn btn-sm btn-outline-info me-1" title="Responder">
-                                    <i class="bi bi-chat-right-text"></i>
-                                </a>
-                                <a href="{% url 'eliminar_calificacion' calificacion.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">No hay calificaciones registradas.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- CONTENEDOR PRINCIPAL / TABLA -->
+    <div class="p-4 rounded-3 border border-secondary border-opacity-25" style="background-color: #1a1c23;">
+        
+        <!-- Título de Sección -->
+        <div class="mb-3">
+            <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-list-task" style="color: #e5b869;"></i> Registro de Calificaciones
+            </h5>
         </div>
+
+        <!-- Tabla de Datos -->
+        <div class="table-responsive">
+            <table id="tablaCalificaciones" class="table table-dark table-hover align-middle mb-0 w-100" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.03);">
+                <thead>
+                    <tr class="border-bottom border-secondary border-opacity-25 text-muted small">
+                        <th scope="col" class="ps-3 py-3 fw-bold text-uppercase">Código</th>
+                        <th scope="col" class="py-3 fw-bold text-uppercase">Servicio</th>
+                        <th scope="col" class="py-3 fw-bold text-uppercase">Cliente</th>
+                        <th scope="col" class="py-3 fw-bold text-uppercase text-center">Puntuación</th>
+                        <th scope="col" class="py-3 fw-bold text-uppercase">Comentario</th>
+                        <th scope="col" class="py-3 fw-bold text-uppercase text-center">Respuesta</th>
+                        <th scope="col" class="py-3 fw-bold text-uppercase text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for calificacion in calificaciones %}
+                    <tr class="border-bottom border-secondary border-opacity-10">
+                        <!-- Código Dorado -->
+                        <td class="ps-3 fw-bold" style="color: #e5b869;">
+                            #CAL-{{ calificacion.id|stringformat:"05d" }}
+                        </td>
+
+                        <!-- Servicio -->
+                        <td>
+                            <h6 class="mb-0 fw-bold text-white">{{ calificacion.servicio.nombre }}</h6>
+                        </td>
+
+                        <!-- Cliente -->
+                        <td class="text-light opacity-75">
+                            {{ calificacion.cliente.get_full_name|default:calificacion.cliente_nombre }}
+                        </td>
+
+                        <!-- Puntuación (Estrellas) -->
+                        <td class="text-center text-nowrap">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= calificacion.puntuacion %}
+                                    <i class="bi bi-star-fill" style="color: #e5b869;"></i>
+                                {% else %}
+                                    <i class="bi bi-star text-secondary opacity-50"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+
+                        <!-- Comentario -->
+                        <td class="text-light opacity-75 small">
+                            {{ calificacion.comentario|truncatechars:50 }}
+                        </td>
+
+                        <!-- Badge Pill de Estado Respuesta -->
+                        <td class="text-center">
+                            {% if calificacion.respuesta %}
+                                <span class="badge rounded-pill bg-success bg-opacity-25 text-success fw-semibold px-3 py-2">
+                                    <i class="bi bi-circle-fill me-1 small"></i> Respondida
+                                </span>
+                            {% else %}
+                                <span class="badge rounded-pill bg-warning bg-opacity-25 text-warning fw-semibold px-3 py-2">
+                                    <i class="bi bi-circle-fill me-1 small"></i> Pendiente
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Botones de Acción Circulares -->
+                        <td class="text-center">
+                            <a href="{% url 'responder-calificacion' calificacion.pk %}" class="btn btn-sm btn-outline-info rounded-circle p-0 me-1 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border-color: rgba(13, 202, 240, 0.4);" title="Responder">
+                                <i class="bi bi-chat-right-text"></i>
+                            </a>
+                            <a href="{% url 'eliminar_calificacion' calificacion.pk %}" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border-color: rgba(220, 53, 69, 0.4);" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No hay calificaciones registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <link rel="stylesheet" href="{% static 'css/datatables.css' %}">
-
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
 <script src="{% static 'js/datatables.js' %}"></script>
-
 <script src="{% static 'js/tconf/tconf-tablaCalificaciones.js' %}"></script>
 {% endblock scripts %}
