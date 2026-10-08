@@ -1,0 +1,24 @@
+{% if messages %}
+<div class="app-feedback-stack" aria-live="polite" aria-atomic="false">
+    {% for message in messages %}
+        <div
+            class="alert alert-dismissible fade show app-feedback app-feedback--{% if message.level_tag == 'success' %}success{% elif message.level_tag == 'error' %}error{% elif message.level_tag == 'warning' %}warning{% else %}info{% endif %}"
+            role="alert"
+        >
+            <i
+                class="bi {% if message.level_tag == 'success' %}bi-check-circle-fill{% elif message.level_tag == 'error' %}bi-exclamation-circle-fill{% elif message.level_tag == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}"
+                aria-hidden="true"
+            ></i>
+            <div class="app-feedback__message">{{ message }}</div>
+            <button
+                type="button"
+                class="app-feedback__close"
+                data-bs-dismiss="alert"
+                aria-label="Cerrar mensaje"
+            >
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}

@@ -1,6 +1,8 @@
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.db import IntegrityError, transaction
 from .models import Usuario
+
 
 class UsuarioModelTest(TestCase):
     """Pruebas para el modelo Usuario"""
@@ -8,11 +10,11 @@ class UsuarioModelTest(TestCase):
     def setUp(self):
         """Configuración inicial: crea un usuario de prueba"""
         self.usuario = Usuario.objects.create_user(
-            username='123456789',
             email='test@correo.com',
             password='Test1234*',
-            first_name='Juan',
-            last_name='Pérez',
+            numero_documento='123456789',
+            primer_nombre='Juan',
+            primer_apellido='Pérez',
             telefono='3001234567',
             rol='cliente'
         )
@@ -28,17 +30,15 @@ class UsuarioModelTest(TestCase):
     def test_crear_usuario_barbero(self):
         """Un usuario barbero se crea con especialidad"""
         barbero = Usuario.objects.create_user(
-            username='987654321',
             email='barbero@correo.com',
             password='Test1234*',
-            first_name='Carlos',
-            last_name='López',
+            numero_documento='987654321',
+            primer_nombre='Carlos',
+            primer_apellido='López',
             telefono='3009876543',
             rol='barbero',
-            especialidad='Cortes clásicos'
         )
         self.assertEqual(barbero.rol, 'barbero')
-        self.assertEqual(barbero.especialidad, 'Cortes clásicos')
 
     def test_str_usuario(self):
         """El __str__ retorna nombre completo y rol"""
@@ -50,22 +50,22 @@ class UsuarioModelTest(TestCase):
 
     def test_email_unico(self):
         """No se puede crear dos usuarios con el mismo email"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError), transaction.atomic():
             Usuario.objects.create_user(
-                username='111111111',
-                email='test@correo.com',  # email duplicado
+                email='test@correo.com',
                 password='Test1234*',
+                numero_documento='111111111',
                 telefono='3001111111',
                 rol='cliente'
             )
 
     def test_username_unico(self):
         """No se puede crear dos usuarios con el mismo documento"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError), transaction.atomic():
             Usuario.objects.create_user(
-                username='123456789',  # documento duplicado
                 email='otro@correo.com',
                 password='Test1234*',
+                numero_documento='123456789',
                 telefono='3002222222',
                 rol='cliente'
             )
@@ -77,9 +77,11 @@ class UsuarioModelTest(TestCase):
     def test_rol_por_defecto_cliente(self):
         """El rol por defecto es cliente"""
         usuario = Usuario.objects.create_user(
-            username='555555555',
             email='default@correo.com',
             password='Test1234*',
+            numero_documento='555555555',
+            primer_nombre='Usuario',
+            primer_apellido='Prueba',
             telefono='3005555555',
         )
         self.assertEqual(usuario.rol, 'cliente')
@@ -107,7 +109,6 @@ class UsuarioModelTest(TestCase):
     def test_usuario_inactivo_no_puede_login(self):
         """Un usuario inactivo no puede iniciar sesión"""
         self.usuario.estado = False
-        self.usuario.is_active = False
         self.usuario.save()
         cliente = Client()
         response = cliente.post(reverse('login'), {

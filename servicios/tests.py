@@ -1,9 +1,11 @@
 import os
 import shutil
 import tempfile
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
+from catalogo.models import Promocion
+from .forms import ServiciosForm
 from .models import Servicios, Calificacion
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
@@ -49,20 +51,19 @@ class ChichaBarberModelsTestCase(TestCase):
     def test_creacion_promocion_y_renombrado_imagen(self):
         """Verifica la correcta asignación de promociones y el slugify de su imagen."""
         promocion = Promocion.objects.create(
-            servicio=self.servicio,
             nombre="Combo Descuento Papá",
             porcentaje_descuento=15.50,
-            duracion="Mes de Junio",
             descripcion="Trae a tu hijo y recibe descuento.",
             fecha_inicio=timezone.now().date(),
             fecha_fin=timezone.now().date(),
-            imagen=self.imagen_falsa
+            imagen=self.imagen_falsa,
+            codigo_servicio=self.servicio,
         )
         
         self.assertEqual(str(promocion), "Combo Descuento Papá")
         
-        # Validamos la ruta esperada: "promociones/combo-descuento-papa_<pk>.jpg"
-        nombre_esperado = f"promociones/combo-descuento-papa_{promocion.pk}.jpg"
+        # Promocion conserva el nombre original del archivo dentro de promociones/.
+        nombre_esperado = "promociones/mi_foto_original.jpg"
         self.assertEqual(promocion.imagen.name, nombre_esperado)
 
     def test_calificacion_y_ordenamiento(self):
@@ -70,14 +71,14 @@ class ChichaBarberModelsTestCase(TestCase):
         # Creamos dos calificaciones con tiempos sutilmente distintos
         calificacion_antigua = Calificacion.objects.create(
             servicio=self.servicio,
-            cliente="Juan Pérez",
+            cliente_nombre="Juan Pérez",
             puntuacion=5,
             comentario="¡El mejor degradado del barrio!"
         )
         
         calificacion_reciente = Calificacion.objects.create(
             servicio=self.servicio,
-            cliente="Andrés Mendoza",
+            cliente_nombre="Andrés Mendoza",
             puntuacion=4,
             comentario="Muy buen servicio, demoró un poco."
         )
@@ -110,5 +111,50 @@ class ChichaBarberModelsTestCase(TestCase):
     def tearDownClass(cls):
         super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+
+
+class ServiciosFormValidationTests(SimpleTestCase):
+    def setUp(self):
+        self.valid_data = {
+            'nombre': 'Corte Fade 2',
+            'precio': '25000.00',
+            'duracion': '30',
+            'descripcion': 'Corte clásico con acabado profesional.',
+        }
+
+    def test_accepts_valid_service_data_with_spanish_characters(self):
+        self.valid_data['nombre'] = 'Corte Clásico 2'
+        form = ServiciosForm(data=self.valid_data)
+
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_rejects_markup_in_service_name(self):
+        self.valid_data['nombre'] = '<script>alert(1)</script>'
+        form = ServiciosForm(data=self.valid_data)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('nombre', form.errors)
+
+    def test_rejects_negative_price(self):
+        self.valid_data['precio'] = '-1'
+        form = ServiciosForm(data=self.valid_data)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('precio', form.errors)
+
+    def test_rejects_zero_duration(self):
+        self.valid_data['duracion'] = '0'
+        form = ServiciosForm(data=self.valid_data)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('duracion', form.errors)
+
+    def test_requires_description_when_creating_service(self):
+        self.valid_data.pop('descripcion')
+        form = ServiciosForm(data=self.valid_data)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('descripcion', form.errors)
+
 
 # Create your tests here.

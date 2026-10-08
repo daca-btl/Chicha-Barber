@@ -1,58 +1,99 @@
-from django import forms # type: ignore
-from django.forms import ModelForm # type: ignore
-from django.contrib.admin.widgets import FilteredSelectMultiple # type: ignore
+import re
+
+from django import forms
+from django.forms import ModelForm
 from .models import Servicios, Calificacion
 
 
+class ValidacionServicioMixin:
+    nombre_pattern = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚüÜñÑ\s]+$'
 
-class ServiciosForm(ModelForm):
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get('nombre', '').strip()
+        if not re.fullmatch(self.nombre_pattern, nombre):
+            raise forms.ValidationError(
+                'El nombre solo puede contener letras, números y espacios.'
+            )
+        return nombre
+
+    def clean_precio(self):
+        precio = self.cleaned_data.get('precio')
+        if precio is not None and precio < 0:
+            raise forms.ValidationError('El precio no puede ser negativo.')
+        return precio
+
+    def clean_duracion(self):
+        duracion = self.cleaned_data.get('duracion')
+        if duracion is not None and duracion < 1:
+            raise forms.ValidationError(
+                'La duración debe ser de al menos un minuto.'
+            )
+        return duracion
+
+
+class ServiciosForm(ValidacionServicioMixin, ModelForm):
     class Meta:
         model = Servicios
-        fields=['nombre', 'precio', 'duracion','imagen', ]
+        fields = ['nombre', 'precio', 'duracion', 'descripcion', 'imagen']
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ej. Corte de cabello',
-                'pattern': r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\]+$',
-                'title': 'El nombre solo puede contener letras, números y espacios.'
+                'pattern': ValidacionServicioMixin.nombre_pattern,
+                'title': 'El nombre solo puede contener letras, números y espacios.',
             }),
-            
             'precio': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'title': 'El precio debe ser un número positivo.'
+                'min': '0',
+                'step': '0.01',
+                'title': 'El precio no puede ser negativo.',
             }),
-            
             'duracion': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'min': 1,
-                'title': 'La duración debe ser un número positivo.'
+                'min': '1',
+                'step': '1',
+                'title': 'La duración debe ser de al menos un minuto.',
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
             }),
             'imagen': forms.FileInput(attrs={'class': 'form-control'}),
         }
-        
-        def clean_precio(self):
-            precio = self.cleaned_data.get('precio')
-            if precio is not None and precio < 0:
-                raise forms.ValidationError("El precio debe ser un número positivo.")
-            return precio
-        
-        def clean_nombre(self):
-            nombre = self.cleaned_data.get('nombre')
-            if nombre and not all(char.isalpha() or char.isspace() for char in nombre):
-                raise forms.ValidationError("El nombre solo puede contener letras y espacios.")
-            return nombre
-        
-        def clean_duracion(self):
-            duracion = self.cleaned_data.get('duracion')
-            if duracion is not None and duracion < 1:
-                raise forms.ValidationError("La duración debe ser un número positivo.")
-            return duracion
-        
-class ServiciosEditarForm(ModelForm):
+
+
+class ServiciosEditarForm(ValidacionServicioMixin, ModelForm):
     class Meta:
         model = Servicios
         fields = '__all__'
-        
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'pattern': ValidacionServicioMixin.nombre_pattern,
+            }),
+            'precio': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'step': '0.01',
+            }),
+            'duracion': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'step': '1',
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+            }),
+            'imagen': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+            }),
+            'estado': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+
 class CalificacionForm(ModelForm):
     class Meta:
         model = Calificacion
@@ -79,5 +120,4 @@ class ResponderCalificacionForm(forms.Form):
     )
     
     
-
 

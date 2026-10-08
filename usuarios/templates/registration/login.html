@@ -24,13 +24,6 @@
         <h2 class="form-heading text-white mb-1">Inicia Sesión</h2>
         <p class="small text-white opacity-50 mb-3">Bienvenido a la experiencia premium</p>
 
-        <!-- ERRORES -->
-        {% if form.errors %}
-        <div class="alert auth-alert mb-3">
-            Correo o contraseña incorrectos.
-        </div>
-        {% endif %}
-
         <form method="post" id="form-login">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">

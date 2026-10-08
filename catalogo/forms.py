@@ -45,7 +45,7 @@ def validar_texto(valor, campo):
 def validar_descripcion(valor, campo):
     """
     Valida descripciones permitiendo algunos caracteres
-    útiles como punto, coma, #, *, /, (), guion y guion bajo.
+    útiles como punto, coma, dos puntos, #, *, /, (), guion y guion bajo.
     """
 
     if not valor:
@@ -54,7 +54,7 @@ def validar_descripcion(valor, campo):
     valor = valor.strip()
 
     if not re.fullmatch(
-        r'[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,#*/()_-]+',
+        r'[a-zA-Z0-9áéíóúÁÉÍÓÚüÜñÑ\s.,:#*/()_-]+',
         valor
     ):
         raise forms.ValidationError(
@@ -87,7 +87,7 @@ class ProductoForm(forms.ModelForm):
 
             # ==================================================
             # NOMBRE DEL PRODUCTO
-            # SOLO LETRAS, TILDES, Ñ Y ESPACIOS
+            # Letras, números, tildes, ñ y espacios
             # ==================================================
 
             'nombre': forms.TextInput(
@@ -96,7 +96,7 @@ class ProductoForm(forms.ModelForm):
                     'placeholder': 'Nombre del producto',
 
                     'pattern': (
-                        r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$'
+                        r'^[a-zA-Z0-9áéíóúÁÉÍÓÚüÜñÑ\s]+$'
                     ),
 
                     'title': (
@@ -198,7 +198,7 @@ class ProductoForm(forms.ModelForm):
 
     # ======================================================
     # VALIDAR NOMBRE DEL PRODUCTO
-    # SOLO LETRAS Y ESPACIOS
+    # Letras, números y espacios
     # ======================================================
 
     def clean_nombre(self):
@@ -220,16 +220,15 @@ class ProductoForm(forms.ModelForm):
                 'al menos 2 caracteres.'
             )
 
-        # SOLO LETRAS, TILDES, Ñ Y ESPACIOS
+        # Letras, números, tildes, ñ y espacios
         if not re.fullmatch(
-            r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+',
+            r'[a-zA-Z0-9áéíóúÁÉÍÓÚüÜñÑ\s]+',
             nombre
         ):
 
             raise forms.ValidationError(
                 'El nombre del producto solo puede contener '
-                'letras y espacios. No se permiten números '
-                'ni caracteres especiales.'
+                'letras, números y espacios.'
             )
 
         return nombre

@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'venta',
     'historial',
     'chat_ia',
+    'rest_framework',
+    'reportes',
     
 ]
 

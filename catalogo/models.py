@@ -48,15 +48,18 @@ class Proveedor(models.Model):
 
     telefono = models.CharField(
         max_length=20,
+        default="",
         verbose_name="Teléfono"
     )
 
     correo = models.EmailField(
+        default="",
         verbose_name="Correo electrónico"
     )
 
     direccion = models.CharField(
         max_length=200,
+        default="",
         verbose_name="Dirección"
     )
 

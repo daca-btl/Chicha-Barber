@@ -12,10 +12,11 @@ class AgendaModelTest(TestCase):
 
     def setUp(self):
         self.barbero = Usuario.objects.create(
-            username="barbero1",
             email="barbero1@example.com",
-            first_name="Juan",
-            last_name="Pérez",
+            numero_documento="900000001",
+            telefono="3000000001",
+            primer_nombre="Juan",
+            primer_apellido="Pérez",
             rol="barbero"
         )
 
@@ -50,26 +51,29 @@ class ReservaModelTest(TestCase):
     def setUp(self):
 
         self.barbero = Usuario.objects.create(
-            username="barbero",
             email="barbero@example.com",
-            first_name="Carlos",
-            last_name="Ramírez",
+            numero_documento="900000002",
+            telefono="3000000002",
+            primer_nombre="Carlos",
+            primer_apellido="Ramírez",
             rol="barbero"
         )
 
         self.usuario = Usuario.objects.create(
-            username="cliente",
             email="cliente@example.com",
-            first_name="Pedro",
-            last_name="López",
+            numero_documento="900000003",
+            telefono="3000000003",
+            primer_nombre="Pedro",
+            primer_apellido="López",
             rol="cliente"
         )
 
         self.admin = Usuario.objects.create(
-            username="admin",
             email="admin@example.com",
-            first_name="Administrador",
-            last_name="Sistema",
+            numero_documento="900000004",
+            telefono="3000000004",
+            primer_nombre="Administrador",
+            primer_apellido="Sistema",
             rol="admin"
         )
 
@@ -176,7 +180,7 @@ class ReservaModelTest(TestCase):
     def test_estado_por_defecto(self):
 
         reserva = Reserva.objects.create(
-            turno=self.turno,
+            agenda=self.agenda,
             usuario=self.usuario,
             servicio=self.servicio
         )

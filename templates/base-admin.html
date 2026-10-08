@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chicha Barber Studio</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-icons.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="icon" href="{% static 'img/logo.png' %}" type="image/x-icon">
 </head>
@@ -21,6 +21,7 @@
         <div class="d-flex flex-column flex-grow-1 w-100" style="min-width: 0;">
             <main class="container-fluid p-0 overflow-auto">
                 {% include 'partials/header-admin.html' %}
+                {% include 'partials/feedback-messages.html' %}
                 {% block content %}
                 {% endblock content %}
             </main>
@@ -84,6 +85,7 @@
     </div>
 
     {% block scripts %}{% endblock scripts %}
+    <script src="{% static 'js/datatables-export-theme.js' %}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
     <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
@@ -162,21 +164,5 @@
         });
     </script>
 
-    {% if messages %}
-      <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          {% for message in messages %}
-            console.log("Django envió un mensaje: {{ message|escapejs }}");
-            Swal.fire({
-              title: "{% if message.tags == 'success' %}¡Completado!{% elif message.tags == 'error' %}¡Ups!{% elif message.tags == 'warning' %}Atención{% else %}Información{% endif %}",
-              text: "{{ message|escapejs }}",
-              icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}",
-              confirmButtonColor: '#007ca9',
-              confirmButtonText: 'Aceptar',
-            });
-          {% endfor %}
-        });
-      </script>
-    {% endif %}
 </body>
 </html>
