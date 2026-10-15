@@ -13,16 +13,18 @@
     <link rel="icon" href="{% static 'img/logo.png' %}" type="image/x-icon">
 </head>
 
-<body class="back {% if user.is_authenticated and user.tema == 'light' %}theme-light{% else %}theme-dark{% endif %}">
+<body class="back {% if user.is_authenticated and user.tema == 'light' %}theme-light{% else %}theme-dark{% endif %} d-flex flex-column min-vh-100">
 
     {% include 'partials/header.html' %}
 
-    <main class="d-flex flex-column">
+    <main class="d-flex flex-column flex-grow-1">
         {% include 'partials/feedback-messages.html' %}
 
         {% block content %}
         {% endblock %}
     </main>
+
+    {% include 'partials/footer.html' %}
 
 
     <!-- ========================= -->

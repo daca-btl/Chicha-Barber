@@ -14,14 +14,15 @@
 </head>
 
 
-<body class="back">
+<body class="back d-flex flex-column min-vh-100">
 
-    <main class="d-flex flex-column">
+    <main class="d-flex flex-column flex-grow-1">
     {% include 'partials/feedback-messages.html' %}
     {% block content %}
     {% endblock %}
     </main>
 
+    {% include 'partials/footer.html' %}
 
     {% block scripts %}{% endblock scripts %}
 
