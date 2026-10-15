@@ -176,7 +176,7 @@ class ReservaModelTest(TestCase):
     def test_estado_por_defecto(self):
 
         reserva = Reserva.objects.create(
-            turno=self.turno,
+            agenda=self.agenda,
             usuario=self.usuario,
             servicio=self.servicio
         )

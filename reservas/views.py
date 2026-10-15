@@ -344,8 +344,9 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
         'barberos': barberos,
         'turnos_disponibles': turnos_disponibles,
         'action_url': action_url,
-        'nombre_cliente_val': request.user.get_full_name() if request.user.is_authenticated else '',
-        'correo_cliente_val': request.user.email if request.user.is_authenticated else '',
+        'nombre_usuario_val': request.user.get_full_name() if request.user.is_authenticated else '',
+        'correo_usuario_val': request.user.email if request.user.is_authenticated else '',
+        'telefono_usuario_val': request.user.telefono if request.user.is_authenticated else '',
     }
 
     return render(request, 'reservas/reservas.html', context)
@@ -591,8 +592,6 @@ def crear_reserva_admin(request):
                     nombre_usuario=nombre,
                     correo_usuario=correo,
                     telefono_usuario=telefono,
-                    nombre_cliente=request.user.get_full_name(),
-                    correo_cliente=request.user.email,
                     observacion=observacion,
                     servicio=servicio,
                     precio_historico=servicio.precio,
