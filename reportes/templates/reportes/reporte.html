@@ -1,0 +1,217 @@
+{% extends 'base-admin.html' %}
+{% block title %}Reporte{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Encabezado + filtros -->
+  <div class="rep-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-bar-chart-line-fill text-warning"></i> Reporte</h2>
+      <span class="rep-fecha text-muted" id="rep-rango"></span>
+    </div>
+    <div class="rep-filtros d-flex flex-wrap gap-2 align-items-end">
+      <div>
+        <label class="form-label small mb-0">Un día</label>
+        <input type="date" id="filtro-fecha" class="form-control form-control-sm">
+      </div>
+      <div>
+        <label class="form-label small mb-0">Desde</label>
+        <input type="date" id="filtro-inicio" class="form-control form-control-sm">
+      </div>
+      <div>
+        <label class="form-label small mb-0">Hasta</label>
+        <input type="date" id="filtro-fin" class="form-control form-control-sm">
+      </div>
+      <button class="btn btn-warning fw-bold btn-sm px-3" onclick="cargar()">
+        <i class="bi bi-arrow-clockwise"></i> Generar
+      </button>
+    </div>
+  </div>
+
+  <div id="cargando" class="text-center py-5">
+    <div class="spinner-border text-warning"></div>
+  </div>
+
+  <div id="reporte" class="d-none">
+
+    <!-- Tarjetas KPI -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="kpi kpi-verde">
+          <div class="kpi-icono"><i class="bi bi-cash-coin"></i></div>
+          <div><div class="kpi-label">Ingresos</div><div class="kpi-valor" id="k-ingresos">$0</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="kpi kpi-rojo">
+          <div class="kpi-icono"><i class="bi bi-cart-dash"></i></div>
+          <div><div class="kpi-label">Egresos</div><div class="kpi-valor" id="k-egresos">$0</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="kpi kpi-azul">
+          <div class="kpi-icono"><i class="bi bi-graph-up-arrow"></i></div>
+          <div><div class="kpi-label">Balance</div><div class="kpi-valor" id="k-balance">$0</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="kpi kpi-oscuro">
+          <div class="kpi-icono"><i class="bi bi-receipt"></i></div>
+          <div><div class="kpi-label">Ventas</div><div class="kpi-valor" id="k-ventas">0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Ventas -->
+      <div class="col-lg-6">
+        <div class="rep-card">
+          <div class="rep-card-head"><i class="bi bi-bag-check"></i> Ventas <span class="rep-count" id="c-ventas">0</span></div>
+          <div class="table-responsive rep-tabla">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Código</th><th>Cliente</th><th>Estado</th><th class="text-end">Total</th></tr></thead>
+              <tbody id="t-ventas"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compras -->
+      <div class="col-lg-6">
+        <div class="rep-card">
+          <div class="rep-card-head"><i class="bi bi-truck"></i> Compras <span class="rep-count" id="c-compras">0</span></div>
+          <div class="table-responsive rep-tabla">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Código</th><th>Proveedor</th><th class="text-end">Total</th></tr></thead>
+              <tbody id="t-compras"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reservas -->
+      <div class="col-12">
+        <div class="rep-card">
+          <div class="rep-card-head"><i class="bi bi-calendar2-check"></i> Reservas <span class="rep-count" id="c-reservas">0</span></div>
+          <div class="table-responsive rep-tabla">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Servicio</th><th>Cliente</th><th>Estado</th><th>Fecha</th></tr></thead>
+              <tbody id="t-reservas"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ============ REPORTE — estilo moderno ============ */
+  .rep-header { background:#fff; border-radius:14px; padding:18px 22px; box-shadow:0 2px 14px rgba(0,0,0,.06); }
+  .rep-header h2 { font-size:1.5rem; }
+  .rep-filtros .form-control { border-radius:8px; }
+
+  .kpi { display:flex; align-items:center; gap:14px; background:#fff; border-radius:14px;
+         padding:18px 20px; box-shadow:0 2px 14px rgba(0,0,0,.06); border-left:5px solid #ccc; }
+  .kpi-icono { width:48px; height:48px; border-radius:12px; display:grid; place-items:center;
+               font-size:1.4rem; color:#fff; flex:none; }
+  .kpi-label { font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; font-weight:600; }
+  .kpi-valor { font-size:1.6rem; font-weight:800; line-height:1.1; }
+  .kpi-verde  { border-left-color:#198754; } .kpi-verde  .kpi-icono { background:#198754; }
+  .kpi-rojo   { border-left-color:#dc3545; } .kpi-rojo   .kpi-icono { background:#dc3545; }
+  .kpi-azul   { border-left-color:#0d6efd; } .kpi-azul   .kpi-icono { background:#0d6efd; }
+  .kpi-oscuro { border-left-color:#212529; } .kpi-oscuro .kpi-icono { background:#212529; }
+
+  .rep-card { background:#fff; border-radius:14px; box-shadow:0 2px 14px rgba(0,0,0,.06); overflow:hidden; }
+  .rep-card-head { padding:14px 20px; font-weight:700; border-bottom:1px solid #eef0f2;
+                   display:flex; align-items:center; gap:8px; }
+  .rep-card-head i { color:#ffc107; font-size:1.15rem; }
+  .rep-count { background:#f1f3f5; color:#495057; border-radius:999px; padding:1px 11px; font-size:.8rem; font-weight:700; }
+  .rep-tabla { max-height:340px; }
+  .rep-tabla thead th { position:sticky; top:0; background:#f8f9fa; font-size:.75rem;
+                        text-transform:uppercase; letter-spacing:.4px; color:#6c757d; z-index:1; }
+  .rep-tabla tbody td { font-size:.9rem; }
+  .rep-tabla tbody tr:hover { background:#fff8e1; }
+
+  .badge-ok    { background:#d1e7dd; color:#0f5132; }
+  .badge-warn  { background:#fff3cd; color:#664d03; }
+  .badge-bad   { background:#f8d7da; color:#842029; }
+  .badge-info  { background:#cff4fc; color:#055160; }
+  .badge-muted { background:#e9ecef; color:#495057; }
+  .rep-empty { text-align:center; color:#adb5bd; padding:22px; font-style:italic; }
+</style>
+
+<script>
+const dinero = n => '$' + Number(n || 0).toLocaleString('es-CO');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fila = c => '<tr>' + c.map(x => '<td>' + (x ?? '') + '</td>').join('') + '</tr>';
+const vacio = (n, txt='Sin datos') => '<tr><td colspan="' + n + '" class="rep-empty">' + txt + '</td></tr>';
+
+function badgeEstado(estado) {
+  const e = String(estado || '').toLowerCase();
+  let cls = 'badge-muted';
+  if (/complet|confirm|aprob|activo|pagad/.test(e)) cls = 'badge-ok';
+  else if (/pendient|proces|espera/.test(e)) cls = 'badge-warn';
+  else if (/cancel|anulad|rechaz|vencid/.test(e)) cls = 'badge-bad';
+  else if (/reserv|program/.test(e)) cls = 'badge-info';
+  return '<span class="badge rounded-pill ' + cls + '">' + esc(estado) + '</span>';
+}
+
+function fechaCorta(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function params() {
+  const f = document.getElementById('filtro-fecha').value;
+  const i = document.getElementById('filtro-inicio').value;
+  const t = document.getElementById('filtro-fin').value;
+  if (i || t) return '?fecha_inicio=' + i + '&fecha_fin=' + t;
+  if (f) return '?fecha=' + f;
+  return '';
+}
+
+async function cargar() {
+  const cargando = document.getElementById('cargando');
+  const reporte = document.getElementById('reporte');
+  cargando.classList.remove('d-none');
+  reporte.classList.add('d-none');
+  try {
+    const r = await fetch('/api/reportes/' + params(), { credentials: 'same-origin' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const fin = d.resumen_financiero || {};
+    const ventas = d.ventas || {}, compras = d.compras || {}, reservas = d.reservas || {};
+
+    document.getElementById('k-ingresos').textContent = dinero(fin.ingresos_ventas_completadas);
+    document.getElementById('k-egresos').textContent = dinero(fin.egresos_compras);
+    document.getElementById('k-balance').textContent = dinero(fin.balance);
+    document.getElementById('k-ventas').textContent = ventas.cantidad || 0;
+    document.getElementById('rep-rango').textContent = 'Periodo: ' + (d.fecha || '—');
+
+    document.getElementById('c-ventas').textContent = (ventas.registros || []).length;
+    document.getElementById('c-compras').textContent = (compras.registros || []).length;
+    document.getElementById('c-reservas').textContent = (reservas.registros || []).length;
+
+    document.getElementById('t-ventas').innerHTML = (ventas.registros || []).length
+      ? ventas.registros.map(v => fila([esc(v.codigo), esc(v.cliente), badgeEstado(v.estado_pago), '<span class="fw-bold">' + dinero(v.total) + '</span>'])).join('')
+      : vacio(4);
+    document.getElementById('t-compras').innerHTML = (compras.registros || []).length
+      ? compras.registros.map(c => fila([esc(c.codigo), esc(c.proveedor), '<span class="fw-bold">' + dinero(c.total) + '</span>'])).join('')
+      : vacio(3);
+    document.getElementById('t-reservas').innerHTML = (reservas.registros || []).length
+      ? reservas.registros.map(x => fila([esc(x.servicio), esc(x.cliente), badgeEstado(x.estado), fechaCorta(x.fecha)])).join('')
+      : vacio(4);
+
+    reporte.classList.remove('d-none');
+  } catch (e) {
+    alert('Error al cargar el reporte: ' + e.message);
+  } finally {
+    cargando.classList.add('d-none');
+  }
+}
+cargar();
+</script>
+{% endblock %}

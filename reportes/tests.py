@@ -72,7 +72,7 @@ class ReporteDiarioAPITest(TestCase):
         )
 
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get("/api/reporte-diario/")
+        response = self.client.get(reverse("api-reporte-diario"))
 
         self.assertEqual(response.status_code, 200)
         reporte = response.json()
@@ -143,6 +143,79 @@ class ReporteDiarioAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            f'href="{reverse("reporte-diario-list")}"',
+            f'href="{reverse("reporte-pagina")}"',
         )
         self.assertContains(response, "Generar reporte")
+
+    def test_endpoint_legacy_sigue_disponible(self):
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.get("/api/reporte-diario/")
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_rango_fechas_filtra_ventas_y_compras(self):
+        self.client.force_authenticate(user=self.admin)
+
+        # Venta dentro del rango
+        v1 = Venta.objects.create(
+            nombre_cliente="Cliente Rango 1",
+            total_venta=Decimal("15000.00"),
+            estado_pago="completado",
+        )
+        v1.fecha = timezone.make_aware(datetime(2026, 5, 2, 10, 0))
+        v1.save(update_fields=["fecha"])
+
+        # Venta fuera del rango
+        v2 = Venta.objects.create(
+            nombre_cliente="Cliente Fuera Rango",
+            total_venta=Decimal("10000.00"),
+            estado_pago="completado",
+        )
+        v2.fecha = timezone.make_aware(datetime(2026, 5, 10, 10, 0))
+        v2.save(update_fields=["fecha"])
+
+        # Compra dentro del rango
+        proveedor = Proveedor.objects.create(nombre="Proveedor Rango")
+        c1 = Compra.objects.create(
+            codigo_proveedor=proveedor,
+            total=Decimal("7000.00"),
+        )
+        Compra.objects.filter(pk=c1.pk).update(fecha=date(2026, 5, 3))
+
+        response = self.client.get(
+            reverse("api-reporte-diario"),
+            {"fecha_inicio": "2026-05-01", "fecha_fin": "2026-05-05"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        datos = response.json()
+        self.assertTrue(datos["es_rango"])
+        self.assertEqual(datos["fecha_inicio"], "2026-05-01")
+        self.assertEqual(datos["fecha_fin"], "2026-05-05")
+        self.assertEqual(datos["ventas"]["cantidad"], 1)
+        self.assertEqual(datos["ventas"]["ingresos"], "15000.00")
+        self.assertEqual(datos["compras"]["cantidad"], 1)
+        self.assertEqual(datos["compras"]["total"], "7000.00")
+
+    def test_rango_fechas_inicio_mayor_que_fin_retorna_400(self):
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.get(
+            reverse("api-reporte-diario"),
+            {"fecha_inicio": "2026-05-10", "fecha_fin": "2026-05-01"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json())
+
+    def test_rango_fechas_formato_invalido_retorna_400(self):
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.get(
+            reverse("api-reporte-diario"),
+            {"fecha_inicio": "no-es-fecha", "fecha_fin": "2026-05-01"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json())

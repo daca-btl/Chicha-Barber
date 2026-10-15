@@ -1,13 +1,149 @@
-from django.test import TestCase
-
-from datetime import date, time
+from datetime import date, time, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
+from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from usuarios.models import Usuario, Notificacion
 from servicios.models import Servicios
 from reservas.models import Agenda, Reserva
+
+
+class ReservaBookingFlowTest(TestCase):
+    def setUp(self):
+        self.client_user = Usuario.objects.create(
+            email="cliente-flujo@gmail.com",
+            numero_documento="980000101",
+            telefono="3000000101",
+            primer_nombre="Cliente",
+            primer_apellido="Flujo",
+            rol="cliente",
+        )
+        self.admin_user = Usuario.objects.create(
+            email="admin-flujo@gmail.com",
+            numero_documento="980000103",
+            telefono="3000000103",
+            primer_nombre="Admin",
+            primer_apellido="Flujo",
+            rol="admin",
+        )
+        self.barbero = Usuario.objects.create(
+            email="barbero-flujo@example.com",
+            numero_documento="980000102",
+            telefono="3000000102",
+            primer_nombre="Barbero",
+            primer_apellido="Flujo",
+            rol="barbero",
+        )
+        self.servicio = Servicios.objects.create(
+            nombre="Corte flujo",
+            precio=Decimal("25000.00"),
+            duracion=30,
+            descripcion="Servicio para probar el flujo de reserva",
+        )
+        self.agenda = Agenda.objects.create(
+            profesional=self.barbero,
+            fecha=timezone.localdate() + timedelta(days=2),
+            hora_inicio=time(10, 0),
+            hora_fin=time(10, 30),
+        )
+        self.url = reverse("crear_reserva", args=[self.servicio.pk])
+        self.datos_reserva = {
+            "barbero_id": str(self.barbero.pk),
+            "turno_id": str(self.agenda.pk),
+            "nombre_cliente": "Cliente Flujo",
+            "correo_cliente": self.client_user.email,
+            "telefono_cliente": "3000000101",
+            "medio_pago": "transferencia",
+        }
+
+    def test_cliente_puede_confirmar_reserva_y_guardar_medio_pago(self):
+        self.client.force_login(self.client_user)
+
+        with patch("reservas.views.enviar_correo_reserva"):
+            response = self.client.post(self.url, self.datos_reserva)
+
+        self.assertEqual(response.status_code, 302)
+        reserva = Reserva.objects.get(agenda=self.agenda)
+        self.assertEqual(reserva.usuario, self.client_user)
+        self.assertEqual(reserva.nombre_usuario, "Cliente Flujo")
+        self.assertEqual(reserva.correo_usuario, self.client_user.email)
+        self.assertEqual(reserva.medio_pago, "transferencia")
+        self.assertEqual(
+            Agenda.objects.get(pk=self.agenda.pk).estado,
+            "reservada",
+        )
+        self.assertEqual(
+            response.url,
+            reverse("reserva_confirmada", args=[reserva.pk]),
+        )
+
+    def test_cliente_no_puede_reservar_turno_pasado(self):
+        self.agenda.fecha = timezone.localdate() - timedelta(days=1)
+        self.agenda.save(update_fields=["fecha"])
+        self.client.force_login(self.client_user)
+
+        response = self.client.post(self.url, self.datos_reserva)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "El turno seleccionado no está disponible")
+        self.assertFalse(Reserva.objects.filter(agenda=self.agenda).exists())
+        self.assertEqual(Agenda.objects.get(pk=self.agenda.pk).estado, "disponible")
+
+    def test_cliente_no_autenticado_reanuda_la_reserva_despues_de_registrarse(self):
+        response = self.client.post(self.url, self.datos_reserva)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("registro"), response.url)
+        self.assertEqual(
+            self.client.session["reserva_pendiente"]["turno_id"],
+            str(self.agenda.pk),
+        )
+
+        self.client.force_login(self.client_user)
+        with patch("reservas.views.enviar_correo_reserva"):
+            response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        reserva = Reserva.objects.get(agenda=self.agenda)
+        self.assertEqual(reserva.medio_pago, "transferencia")
+        self.assertNotIn("reserva_pendiente", self.client.session)
+
+    def test_api_solo_devuelve_turnos_futuros_disponibles(self):
+        self.agenda.fecha = timezone.localdate() - timedelta(days=1)
+        self.agenda.save(update_fields=["fecha"])
+
+        response = self.client.get(reverse("api_turnos_disponibles"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["turnos"], [])
+
+    def test_entrada_sin_servicio_lleva_al_catalogo(self):
+        response = self.client.get(reverse("crear_reserva_directa"))
+
+        self.assertRedirects(response, reverse("servicios"))
+
+    def test_administrador_puede_crear_cita_con_datos_del_cliente(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("crear_reserva_admin"),
+            {
+                "nombre_cliente": "Cliente Agendado",
+                "correo_cliente": "cliente-agendado@gmail.com",
+                "telefono_cliente": "3000000104",
+                "servicio": str(self.servicio.pk),
+                "turno_id": str(self.agenda.pk),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        reserva = Reserva.objects.get(agenda=self.agenda)
+        self.assertEqual(reserva.nombre_cliente, "Cliente Agendado")
+        self.assertEqual(reserva.correo_cliente, "cliente-agendado@gmail.com")
+        self.assertEqual(Agenda.objects.get(pk=self.agenda.pk).estado, "reservada")
 class AgendaModelTest(TestCase):
 
     def setUp(self):

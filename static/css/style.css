@@ -158,8 +158,8 @@ header a { transition: .3s; }
 
 /* ── modo claro adaptativo para el flujo de reservas ── */
 body.theme-light .booking-wrap {
-  --bg-card-dark: #1f117a;                       /* Fondo blanco limpio y elegante */
-  --bg-input-dark: #051a30;                      /* Cajas internas limpias */
+  --bg-card-dark: #ffffff;                       /* Tarjeta blanca limpia */
+  --bg-input-dark: #f8fafc;                      /* Cajas internas limpias */
   --bg-input-hover: rgba(34, 174, 209, 0.08);
   --color-azul: #0f172a;                    /* Títulos en slate oscuro */
   --text-muted: #64748b;                        /* Gris pizarra elegante */
@@ -263,6 +263,77 @@ body.theme-light #turnos-container::-webkit-scrollbar-thumb { background: rgba(0
 .booking-wrap .text-custom-muted { color: var(--text-muted) !important; }
 .booking-wrap .text-time-date { color: #ffffff !important; }
 body.theme-light .booking-wrap .text-time-date { color: #030301 !important; }
+
+/* Labels y textos blancos fijos del form de datos del cliente -> oscuros en claro */
+body.theme-light .booking-wrap .form-label.text-white,
+body.theme-light .booking-wrap label.text-white { color: #0f172a !important; }
+body.theme-light .booking-wrap .text-white.fs-5 { color: #0f172a !important; }
+
+/* Tarjetas de selección (barberos/turnos): degradado beige->gris suave en modo claro */
+body.theme-light .booking-wrap .choice-card-dark {
+  background: linear-gradient(to right, #F4F1E9, #D8D5CC) !important;
+  border: 1px solid #d6d3ca !important;
+  color: #0f172a !important;
+}
+body.theme-light .booking-wrap .choice-card-dark:hover {
+  background: linear-gradient(to right, #EFEBDD, #CFCCC0) !important;
+  border-color: rgba(34, 174, 209, 0.4) !important;
+}
+
+/* ── Pasos del wizard (BARBERO/TURNO/DATOS/PAGO) legibles en modo claro ── */
+body.theme-light .booking-wrap .rc-progress__circle {
+  background: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+body.theme-light .booking-wrap .rc-progress__label {
+  color: #475569 !important;
+}
+body.theme-light .booking-wrap .rc-progress__line {
+  background: #cbd5e1 !important;
+}
+/* Paso activo: dorado con número oscuro (alto contraste) */
+body.theme-light .booking-wrap .rc-progress__item.is-active .rc-progress__circle {
+  background: linear-gradient(135deg, #d4af37, #b8912c) !important;
+  border-color: #b8912c !important;
+  color: #1a1408 !important;
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25), 0 4px 16px rgba(212, 175, 55, 0.4) !important;
+}
+body.theme-light .booking-wrap .rc-progress__item.is-active .rc-progress__label {
+  color: #1a1408 !important;
+}
+/* Paso completado: check blanco sobre verde-dorado oscuro */
+body.theme-light .booking-wrap .rc-progress__item.is-done .rc-progress__circle {
+  background: #8a6d1a !important;
+  border-color: #8a6d1a !important;
+}
+body.theme-light .booking-wrap .rc-progress__item.is-done .rc-progress__circle::after {
+  color: #ffffff !important;
+}
+body.theme-light .booking-wrap .rc-progress__item.is-done .rc-progress__label {
+  color: #475569 !important;
+}
+
+/* ── Botones Siguiente/Atrás legibles en modo claro ── */
+body.theme-light .booking-wrap .rc-btn-next {
+  background: linear-gradient(135deg, #d4af37, #b8912c) !important;
+  color: #1a1408 !important;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35) !important;
+}
+body.theme-light .booking-wrap .rc-btn-next:hover {
+  color: #1a1408 !important;
+  box-shadow: 0 8px 22px rgba(212, 175, 55, 0.5) !important;
+}
+body.theme-light .booking-wrap .rc-btn-back {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+body.theme-light .booking-wrap .rc-btn-back:hover {
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
 
 
 /* =========================
@@ -1784,9 +1855,22 @@ body {
 .private-perfil__div-1 span.text-dark {
   color: #f5f5f5 !important;
 }
+/* En modo claro la tarjeta es blanca: valores oscuros y legibles */
+body.theme-light .private-perfil__div-1 h3.text-dark,
+body.theme-light .private-perfil__div-1 span.text-dark {
+  color: #0f172a !important;
+}
 
 .private-perfil__div-1 small.text-muted {
   color: rgba(255, 255, 255, 0.6) !important;
+}
+body.theme-light .private-perfil__div-1 small.text-muted {
+  color: #64748b !important;
+}
+/* Tarjeta del perfil con el degradado beige->gris en modo claro */
+body.theme-light .private-perfil__div-1 {
+  background: linear-gradient(to right, #F2F0E9, #8E8E8E) !important;
+  border: 1px solid #d6d3ca !important;
 }
 
 .private-perfil__div-1 .border-light-subtle,
@@ -2449,6 +2533,14 @@ main {
   -webkit-backdrop-filter: blur(22px) saturate(150%);
   border: 1px solid rgba(212, 175, 55, 0.18);
   box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+}
+/* En modo claro la tarjeta de reservas usa el degradado beige->gris */
+body.theme-light .booking-wrap .dark-barber-card.reservas-reservas__div-2 {
+  background: linear-gradient(to right, #F2F0E9, #8E8E8E) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #d6d3ca !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02) !important;
 }
 
 .reservas-reservas__div-1 {

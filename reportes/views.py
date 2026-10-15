@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_date
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
+from django.views.generic import TemplateView
 
 from catalogo.models import Producto
 from compra.models import Compra
@@ -26,30 +27,76 @@ class ReporteDiarioViewSet(viewsets.ViewSet):
 
     def list(self, request):
         fecha_parametro = request.query_params.get("fecha")
-        try:
-            fecha = (
-                parse_date(fecha_parametro)
-                if fecha_parametro
-                else timezone.localdate()
-            )
-        except ValueError:
-            fecha = None
-        if fecha is None:
-            return Response(
-                {"error": "El parámetro 'fecha' debe tener formato YYYY-MM-DD."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        fecha_inicio_param = request.query_params.get("fecha_inicio")
+        fecha_fin_param = request.query_params.get("fecha_fin")
 
-        inicio = timezone.make_aware(datetime.combine(fecha, time.min))
+        if fecha_inicio_param or fecha_fin_param:
+            if fecha_inicio_param:
+                try:
+                    fecha_inicio = parse_date(fecha_inicio_param)
+                except ValueError:
+                    fecha_inicio = None
+                if fecha_inicio is None:
+                    return Response(
+                        {"error": "El parámetro 'fecha_inicio' debe tener formato YYYY-MM-DD."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                fecha_inicio = None
+
+            if fecha_fin_param:
+                try:
+                    fecha_fin = parse_date(fecha_fin_param)
+                except ValueError:
+                    fecha_fin = None
+                if fecha_fin is None:
+                    return Response(
+                        {"error": "El parámetro 'fecha_fin' debe tener formato YYYY-MM-DD."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                fecha_fin = None
+
+            if fecha_inicio and not fecha_fin:
+                fecha_fin = timezone.localdate()
+            elif fecha_fin and not fecha_inicio:
+                fecha_inicio = fecha_fin
+
+            if fecha_inicio > fecha_fin:
+                return Response(
+                    {"error": "La 'fecha_inicio' no puede ser posterior a 'fecha_fin'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif fecha_parametro:
+            try:
+                fecha = parse_date(fecha_parametro)
+            except ValueError:
+                fecha = None
+            if fecha is None:
+                return Response(
+                    {"error": "El parámetro 'fecha' debe tener formato YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            fecha_inicio = fecha
+            fecha_fin = fecha
+        else:
+            hoy = timezone.localdate()
+            fecha_inicio = hoy
+            fecha_fin = hoy
+
+        inicio = timezone.make_aware(datetime.combine(fecha_inicio, time.min))
         fin = timezone.make_aware(
-            datetime.combine(fecha + timedelta(days=1), time.min)
+            datetime.combine(fecha_fin + timedelta(days=1), time.min)
         )
 
         ventas = Venta.objects.filter(
             fecha__gte=inicio,
             fecha__lt=fin,
         ).order_by("-fecha")
-        compras = Compra.objects.filter(fecha=fecha).select_related(
+        compras = Compra.objects.filter(
+            fecha__gte=fecha_inicio,
+            fecha__lte=fecha_fin,
+        ).select_related(
             "codigo_proveedor"
         ).order_by("-fecha", "-codigo")
         reservas = Reserva.objects.filter(
@@ -93,7 +140,14 @@ class ReporteDiarioViewSet(viewsets.ViewSet):
         )
 
         return Response({
-            "fecha": fecha.isoformat(),
+            "fecha": (
+                fecha_inicio.isoformat()
+                if fecha_inicio == fecha_fin
+                else f"{fecha_inicio.isoformat()} a {fecha_fin.isoformat()}"
+            ),
+            "fecha_inicio": fecha_inicio.isoformat(),
+            "fecha_fin": fecha_fin.isoformat(),
+            "es_rango": fecha_inicio != fecha_fin,
             "ventas": {
                 "cantidad": ventas.count(),
                 "completadas": ventas_completadas.count(),
@@ -116,8 +170,13 @@ class ReporteDiarioViewSet(viewsets.ViewSet):
                 "registros": [
                     {
                         "codigo": compra.codigo,
-                        "proveedor": compra.codigo_proveedor.nombre,
+                        "proveedor": (
+                            compra.codigo_proveedor.nombre
+                            if compra.codigo_proveedor
+                            else "Sin proveedor"
+                        ),
                         "total": _dinero(compra.total),
+                        "fecha": compra.fecha.isoformat() if compra.fecha else None,
                     }
                     for compra in compras
                 ],
@@ -127,7 +186,11 @@ class ReporteDiarioViewSet(viewsets.ViewSet):
                 "por_estado": reservas_por_estado,
                 "registros": [
                     {
-                        "servicio": reserva.servicio.nombre,
+                        "servicio": (
+                            reserva.servicio.nombre
+                            if reserva.servicio
+                            else "Sin servicio"
+                        ),
                         "cliente": reserva.nombre_cliente,
                         "estado": reserva.estado,
                         "fecha": (
@@ -143,6 +206,10 @@ class ReporteDiarioViewSet(viewsets.ViewSet):
                 "total": Usuario.objects.count(),
                 "activos": Usuario.objects.filter(estado=True).count(),
                 "nuevos_en_fecha": Usuario.objects.filter(
+                    fecha_creacion__gte=inicio,
+                    fecha_creacion__lt=fin,
+                ).count(),
+                "nuevos_en_rango": Usuario.objects.filter(
                     fecha_creacion__gte=inicio,
                     fecha_creacion__lt=fin,
                 ).count(),
@@ -165,6 +232,7 @@ class ReporteDiarioViewSet(viewsets.ViewSet):
                 "total": Servicios.objects.count(),
                 "activos": Servicios.objects.filter(estado=True).count(),
                 "reservas_en_fecha": list(servicios_reservados),
+                "reservas_en_rango": list(servicios_reservados),
             },
             "historial": {
                 "cantidad": historial.count(),
@@ -189,3 +257,6 @@ class ReporteDiarioViewSet(viewsets.ViewSet):
                 "balance": _dinero(ingresos - gastos),
             },
         })
+
+class ReportePagina(TemplateView):
+    template_name = "reportes/reporte.html"

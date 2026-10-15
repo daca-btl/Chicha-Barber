@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 
 import re
 import dns.resolver
@@ -129,17 +130,34 @@ def _parse_fecha_reserva(fecha_str):
 
 
 def obtener_turnos_disponibles_json(request):
-    hoy = date.today()
+    hoy = timezone.localdate()
     fin = hoy + timedelta(days=6)
     barbero_id = request.GET.get('barbero_id', 'any')
 
     agendas = Agenda.objects.filter(
         fecha__range=(hoy, fin),
-        estado='disponible'
-    ).order_by('fecha', 'hora_inicio')
+        estado='disponible',
+        profesional__rol='barbero',
+        profesional__estado=True,
+    ).select_related('profesional').order_by('fecha', 'hora_inicio')
 
     if barbero_id and barbero_id != 'any':
+        if not barbero_id.isdigit():
+            return JsonResponse(
+                {'error': 'El barbero seleccionado no es válido.'},
+                status=400,
+            )
         agendas = agendas.filter(profesional_id=barbero_id)
+
+    ahora = timezone.localtime()
+    agendas = [
+        agenda for agenda in agendas
+        if agenda.fecha > hoy
+        or (
+            agenda.fecha == hoy
+            and agenda.hora_inicio > ahora.time()
+        )
+    ]
 
     resultado = [
         {
@@ -161,10 +179,6 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
     promo = None
     factura_id = request.GET.get('factura_id') or request.POST.get('factura_id')
 
-    if not request.user.is_authenticated:
-        login_url = reverse('login')
-        return redirect(f'{login_url}?next={request.get_full_path()}')
-
     if promocion_id is not None:
         promo = get_object_or_404(Promocion, pk=promocion_id)
         if not promo.codigo_servicio:
@@ -174,8 +188,8 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
     elif servicio_id is not None:
         servicio = get_object_or_404(Servicios, id=servicio_id)
     else:
-        messages.warning(request, 'Debe seleccionar un servicio o promoción.')
-        return redirect('inicio')
+        messages.info(request, 'Selecciona primero el servicio que quieres reservar.')
+        return redirect('servicios')
 
     # Cálculo del precio aplicando descuento si existe promoción
     precio = servicio.precio
@@ -183,58 +197,70 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
         descuento = Decimal(promo.porcentaje_descuento) / Decimal('100')
         precio = round(precio * (Decimal('1') - descuento), 2)
 
-    # Procesar reserva pendiente guardada en la sesión
+    # Completa la reserva pendiente cuando el cliente vuelve del registro.
     if request.user.is_authenticated and 'reserva_pendiente' in request.session:
-        reserva_data = request.session.pop('reserva_pendiente')
+        reserva_data = request.session['reserva_pendiente']
         turno_id = reserva_data.get('turno_id')
         telefono = reserva_data.get('telefono_usuario') or reserva_data.get('telefono_cliente')
         nombre = reserva_data.get('nombre_usuario') or reserva_data.get('nombre_cliente') or request.user.get_full_name()
         correo = reserva_data.get('correo_usuario') or reserva_data.get('correo_cliente') or request.user.email
         observacion = reserva_data.get('observacion')
+        medio_pago = reserva_data.get('medio_pago', 'presencial')
 
         try:
-            agenda_obj = Agenda.objects.get(pk=turno_id, estado='disponible')
-            fecha_hora_turno = datetime.combine(agenda_obj.fecha, agenda_obj.hora_inicio)
-
-            reserva = Reserva.objects.create(
-                agenda=agenda_obj,
-                usuario=request.user,
-                nombre_cliente=nombre,
-                correo_cliente=correo,
-                telefono_usuario=telefono,
-                fecha_reserva=fecha_hora_turno,
-                observacion=observacion,
-                servicio=servicio,
-                precio_historico=precio,
-            )
-            agenda_obj.estado = 'reservada'
-            agenda_obj.save()
-
-            try:
-                enviar_correo_reserva(
-                    correo_cliente=correo,
-                    nombre=nombre,
-                    servicio=servicio,
-                    fecha=fecha_hora_turno,
+            with transaction.atomic():
+                agenda_obj = Agenda.objects.select_for_update().get(
+                    pk=turno_id,
+                    estado='disponible',
+                    profesional__rol='barbero',
+                    profesional__estado=True,
                 )
-            except Exception as mail_error:
-                print(f"Error al enviar correo de reserva: {mail_error}")
+                _validar_turno_futuro(agenda_obj)
+                if medio_pago not in dict(Reserva.MEDIO_PAGO_CHOICES):
+                    raise ValueError('El medio de pago seleccionado no es válido.')
+                barbero_id_sel = reserva_data.get('barbero_id', 'any')
+                if (
+                    barbero_id_sel != 'any'
+                    and str(agenda_obj.profesional_id) != str(barbero_id_sel)
+                ):
+                    raise ValueError('El turno ya no corresponde al barbero seleccionado.')
+                reserva = Reserva.objects.create(
+                    agenda=agenda_obj,
+                    usuario=request.user,
+                    nombre_usuario=nombre,
+                    correo_usuario=correo,
+                    telefono_usuario=telefono,
+                    observacion=observacion,
+                    servicio=servicio,
+                    precio_historico=precio,
+                    medio_pago=medio_pago,
+                )
+                agenda_obj.estado = 'reservada'
+                agenda_obj.save(update_fields=['estado'])
 
+            request.session.pop('reserva_pendiente', None)
+            _enviar_confirmacion_reserva(reserva, servicio)
             messages.success(request, '¡Te has registrado con éxito y tu reserva ha sido confirmada!')
             return redirect(reverse('reserva_confirmada', kwargs={'pk': reserva.id}))
         except Agenda.DoesNotExist:
+            request.session.pop('reserva_pendiente', None)
             messages.error(request, 'El turno que habías seleccionado ya no está disponible.')
+        except ValueError as error:
+            request.session.pop('reserva_pendiente', None)
+            messages.error(request, str(error))
         except Exception as e:
             messages.error(request, f'Error al procesar tu reserva pendiente: {e}')
 
     barberos = Usuario.objects.filter(rol='barbero', estado=True)
-    ahora = datetime.now()
-    hoy = ahora.date()
+    ahora = timezone.localtime()
+    hoy = timezone.localdate()
     fin = hoy + timedelta(days=6)
 
     turnos_qs = Agenda.objects.filter(
         fecha__range=(hoy, fin),
-        estado='disponible'
+        estado='disponible',
+        profesional__rol='barbero',
+        profesional__estado=True,
     ).order_by('fecha', 'hora_inicio')
 
     turnos_disponibles = [
@@ -261,6 +287,7 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
 
         context_error = {
             'servicio': servicio,
+            'promo': promo,
             'barberos': barberos,
             'turnos_disponibles': turnos_disponibles,
             'action_url': action_url,
@@ -283,15 +310,47 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
             context_error['wizard_error_step'] = 2  # Paso "Datos"
             context_error['wizard_errors'] = errores
             return render(request, 'reservas/reservas.html', context_error)
-        # --------------------------------------------------------
+
+        if medio_pago_sel not in dict(Reserva.MEDIO_PAGO_CHOICES):
+            context_error['wizard_error_step'] = 3
+            context_error['wizard_errors'] = ['Selecciona un medio de pago válido.']
+            return render(request, 'reservas/reservas.html', context_error)
 
         if not request.user.is_authenticated:
+            try:
+                agenda_obj = Agenda.objects.get(
+                    pk=turno_id,
+                    estado='disponible',
+                    profesional__rol='barbero',
+                    profesional__estado=True,
+                )
+                _validar_turno_futuro(agenda_obj)
+                if (
+                    barbero_id_sel != 'any'
+                    and str(agenda_obj.profesional_id) != barbero_id_sel
+                ):
+                    raise ValueError(
+                        'El turno no corresponde al barbero seleccionado.'
+                    )
+            except (Agenda.DoesNotExist, ValueError) as error:
+                context_error['wizard_error_step'] = 1
+                context_error['wizard_errors'] = [
+                    (
+                        'El turno seleccionado ya no está disponible.'
+                        if isinstance(error, Agenda.DoesNotExist)
+                        else str(error)
+                    )
+                ]
+                return render(request, 'reservas/reservas.html', context_error)
+
             request.session['reserva_pendiente'] = {
                 'turno_id': turno_id,
                 'telefono_cliente': telefono,
                 'correo_cliente': correo,
                 'nombre_cliente': nombre,
                 'observacion': observacion,
+                'medio_pago': medio_pago_sel,
+                'barbero_id': barbero_id_sel,
             }
             messages.info(request, 'Por favor, regístrate o inicia sesión para confirmar tu reserva.')
             login_url = reverse('registro')
@@ -299,42 +358,48 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
 
         try:
             with transaction.atomic():
-                agenda_obj = Agenda.objects.select_for_update().get(pk=turno_id, estado='disponible')
-
-                precio = servicio.precio
-                fecha_hora_turno = datetime.combine(agenda_obj.fecha, agenda_obj.hora_inicio)
+                agenda_obj = Agenda.objects.select_for_update().get(
+                    pk=turno_id,
+                    estado='disponible',
+                    profesional__rol='barbero',
+                    profesional__estado=True,
+                )
+                _validar_turno_futuro(agenda_obj)
+                barbero_id_sel = request.POST.get('barbero_id', 'any')
+                if (
+                    barbero_id_sel != 'any'
+                    and str(agenda_obj.profesional_id) != barbero_id_sel
+                ):
+                    raise ValueError('El turno no corresponde al barbero seleccionado.')
 
                 reserva = Reserva.objects.create(
                     agenda=agenda_obj,
                     usuario=request.user,
-                    nombre_cliente=nombre,
-                    correo_cliente=correo,
+                    nombre_usuario=nombre,
+                    correo_usuario=correo,
                     telefono_usuario=telefono,
-                    fecha_reserva=fecha_hora_turno,
                     observacion=observacion,
                     servicio=servicio,
                     precio_historico=precio,
+                    medio_pago=medio_pago_sel,
                 )
                 agenda_obj.estado = 'reservada'
-                agenda_obj.save()
+                agenda_obj.save(update_fields=['estado'])
 
-            try:
-                enviar_correo_reserva(
-                    correo_cliente=correo,
-                    nombre=nombre,
-                    servicio=servicio,
-                    fecha=fecha_hora_turno,
-                )
-            except Exception as mail_error:
-                print(f"Error al enviar correo de reserva: {mail_error}")
+            _enviar_confirmacion_reserva(reserva, servicio)
 
             messages.success(request, '¡Tu reserva ha sido confirmada!')
             return redirect(reverse('reserva_confirmada', kwargs={'pk': reserva.id}))
         except Agenda.DoesNotExist:
-            reserva_existente = Reserva.objects.filter(agenda_id=turno_id).first()
-            if reserva_existente:
-                return redirect(reverse('reserva_confirmada', kwargs={'pk': reserva_existente.id}))
-            messages.error(request, '¡Ups! El turno seleccionado ya no está disponible. Por favor elige otro.')
+            context_error['wizard_error_step'] = 1
+            context_error['wizard_errors'] = [
+                'El turno seleccionado ya no está disponible. Elige otro horario.'
+            ]
+            return render(request, 'reservas/reservas.html', context_error)
+        except ValueError as error:
+            context_error['wizard_error_step'] = 1
+            context_error['wizard_errors'] = [str(error)]
+            return render(request, 'reservas/reservas.html', context_error)
         except Exception as e:
             messages.error(request, f'Error al crear la reserva: {e}')
 
@@ -344,11 +409,46 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
         'barberos': barberos,
         'turnos_disponibles': turnos_disponibles,
         'action_url': action_url,
-        'nombre_cliente_val': request.user.get_full_name() if request.user.is_authenticated else '',
-        'correo_cliente_val': request.user.email if request.user.is_authenticated else '',
+        'nombre_cliente_val': (
+            request.user.get_full_name()
+            if request.user.is_authenticated else ''
+        ),
+        'correo_cliente_val': (
+            request.user.email if request.user.is_authenticated else ''
+        ),
+        'telefono_cliente_val': (
+            request.user.telefono if request.user.is_authenticated else ''
+        ),
+        'medio_pago_val': 'presencial',
     }
 
     return render(request, 'reservas/reservas.html', context)
+
+
+def _validar_turno_futuro(agenda):
+    ahora = timezone.localtime()
+    hoy = timezone.localdate()
+    if (
+        agenda.fecha < hoy
+        or (
+            agenda.fecha == hoy
+            and agenda.hora_inicio <= ahora.time()
+        )
+        or agenda.fecha > hoy + timedelta(days=6)
+    ):
+        raise ValueError('El turno seleccionado no está disponible para reserva.')
+
+
+def _enviar_confirmacion_reserva(reserva, servicio):
+    try:
+        enviar_correo_reserva(
+            correo_cliente=reserva.correo_cliente,
+            nombre=reserva.nombre_cliente,
+            servicio=servicio,
+            fecha=reserva.fecha_reserva,
+        )
+    except Exception as mail_error:
+        print(f"Error al enviar correo de reserva: {mail_error}")
 
 
 def reserva_confirmada(request, pk):
@@ -522,13 +622,15 @@ def crear_reserva_admin(request):
     # Igual que en el wizard de cliente: solo turnos futuros y realmente
     # disponibles. El administrador ELIGE uno de esta lista, no escribe
     # una fecha a mano.
-    ahora = datetime.now()
-    hoy = ahora.date()
+    ahora = timezone.localtime()
+    hoy = timezone.localdate()
     fin = hoy + timedelta(days=30)
 
     turnos_qs = Agenda.objects.select_related('profesional').filter(
         fecha__range=(hoy, fin),
-        estado='disponible'
+        estado='disponible',
+        profesional__rol='barbero',
+        profesional__estado=True,
     ).order_by('fecha', 'hora_inicio')
 
     turnos_disponibles = [
@@ -582,6 +684,8 @@ def crear_reserva_admin(request):
                 agenda_obj = Agenda.objects.select_for_update().get(
                     pk=turno_id,
                     estado='disponible',
+                    profesional__rol='barbero',
+                    profesional__estado=True,
                 )
                 servicio = Servicios.objects.get(id=servicio_id)
 
@@ -591,14 +695,12 @@ def crear_reserva_admin(request):
                     nombre_usuario=nombre,
                     correo_usuario=correo,
                     telefono_usuario=telefono,
-                    nombre_cliente=request.user.get_full_name(),
-                    correo_cliente=request.user.email,
                     observacion=observacion,
                     servicio=servicio,
                     precio_historico=servicio.precio,
                 )
                 agenda_obj.estado = 'reservada'
-                agenda_obj.save()
+                agenda_obj.save(update_fields=['estado'])
 
             messages.success(request, '¡Cita registrada!')
             return redirect('ver_agenda')

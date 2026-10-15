@@ -107,6 +107,10 @@ class Reserva(models.Model):
         ("confirmada", "Confirmada"),
         ("cancelada", "Cancelada"),
     ]
+    MEDIO_PAGO_CHOICES = [
+        ("presencial", "Efectivo en el local"),
+        ("transferencia", "Transferencia en el local"),
+    ]
 
     agenda = models.ForeignKey(
         Agenda,
@@ -137,6 +141,13 @@ class Reserva(models.Model):
         blank=True,
         null=True,
         verbose_name="Observación",
+    )
+
+    medio_pago = models.CharField(
+        max_length=20,
+        choices=MEDIO_PAGO_CHOICES,
+        default="presencial",
+        verbose_name="Medio de Pago",
     )
 
     estado = models.CharField(

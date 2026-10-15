@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import ReporteDiarioViewSet
+from .views import ReporteDiarioViewSet,ReportePagina
 
 
 router = DefaultRouter()
@@ -12,5 +12,12 @@ router.register(
 )
 
 urlpatterns = [
+    path(
+        "reportes/",
+        ReporteDiarioViewSet.as_view({"get": "list"}),
+        name="api-reporte-diario",
+    ),
+    path("pagina/", ReportePagina.as_view(), name="reporte-pagina"),
+
     path("", include(router.urls)),
 ]

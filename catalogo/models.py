@@ -252,6 +252,10 @@ class Producto(models.Model):
 
         return 0
 
+    @property
+    def detalle_producto(self):
+        return self.codigo_detalle_producto
+
     # ======================================================
     # PRECIO DE VENTA ACTUAL
     # ======================================================
