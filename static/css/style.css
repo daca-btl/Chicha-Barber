@@ -4353,3 +4353,35 @@ body.theme-dark .admin-panel-shell main #tablaPromociones tbody .servicios-lista
     height: 80px !important;
   }
 }
+  /* animacion y fondo de panel*/
+
+  .badge-status-confirmada {
+    background-color: #0f3822 !important;
+    color: #4ade80 !important;
+    border: 1px solid #166534 !important;
+  }
+  .badge-status-reservada {
+    background-color: #422006 !important;
+    color: #fde047 !important;
+    border: 1px solid #854d0e !important;
+  }
+  .badge-status-pendiente {
+    background-color: #451a03 !important;
+    color: #fdba74 !important;
+    border: 1px solid #9a3412 !important;
+  }
+  .badge-status-cancelada {
+    background-color: #450a0a !important;
+    color: #fca5a5 !important;
+    border: 1px solid #991b1b !important;
+  }
+  .badge-status-completada {
+    background-color: #172554 !important;
+    color: #93c5fd !important;
+    border: 1px solid #1e40af !important;
+  }
+  .badge-status-default {
+    background-color: #27272a !important;
+    color: #e4e4e7 !important;
+    border: 1px solid #52525b !important;
+  }
