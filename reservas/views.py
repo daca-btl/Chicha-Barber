@@ -208,38 +208,33 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
         medio_pago = reserva_data.get('medio_pago', 'presencial')
 
         try:
-            with transaction.atomic():
-                agenda_obj = Agenda.objects.select_for_update().get(
-                    pk=turno_id,
-                    estado='disponible',
-                    profesional__rol='barbero',
-                    profesional__estado=True,
-                )
-                _validar_turno_futuro(agenda_obj)
-                if medio_pago not in dict(Reserva.MEDIO_PAGO_CHOICES):
-                    raise ValueError('El medio de pago seleccionado no es válido.')
-                barbero_id_sel = reserva_data.get('barbero_id', 'any')
-                if (
-                    barbero_id_sel != 'any'
-                    and str(agenda_obj.profesional_id) != str(barbero_id_sel)
-                ):
-                    raise ValueError('El turno ya no corresponde al barbero seleccionado.')
-                reserva = Reserva.objects.create(
-                    agenda=agenda_obj,
-                    usuario=request.user,
-                    nombre_usuario=nombre,
-                    correo_usuario=correo,
-                    telefono_usuario=telefono,
-                    observacion=observacion,
-                    servicio=servicio,
-                    precio_historico=precio,
-                    medio_pago=medio_pago,
-                )
-                agenda_obj.estado = 'reservada'
-                agenda_obj.save(update_fields=['estado'])
+            agenda_obj = Agenda.objects.get(pk=turno_id, estado='disponible')
+            fecha_hora_turno = datetime.combine(agenda_obj.fecha, agenda_obj.hora_inicio)
 
-            request.session.pop('reserva_pendiente', None)
-            _enviar_confirmacion_reserva(reserva, servicio)
+            reserva = Reserva.objects.create(
+                agenda=agenda_obj,
+                usuario=request.user,
+                nombre_usuario=nombre,
+                correo_usuario=correo,
+                telefono_usuario=telefono,
+                fecha_reserva=fecha_hora_turno,
+                observacion=observacion,
+                servicio=servicio,
+                precio_historico=precio,
+            )
+            agenda_obj.estado = 'reservada'
+            agenda_obj.save()
+
+            try:
+                enviar_correo_reserva(
+                    correo_cliente=correo,
+                    nombre=nombre,
+                    servicio=servicio,
+                    fecha=fecha_hora_turno,
+                )
+            except Exception as mail_error:
+                print(f"Error al enviar correo de reserva: {mail_error}")
+
             messages.success(request, '¡Te has registrado con éxito y tu reserva ha sido confirmada!')
             return redirect(reverse('reserva_confirmada', kwargs={'pk': reserva.id}))
         except Agenda.DoesNotExist:
@@ -276,9 +271,9 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
 
     if request.method == 'POST':
         turno_id = request.POST.get('turno_id')
-        telefono = request.POST.get('telefono_cliente', '').strip()
-        correo = request.POST.get('correo_cliente', '').strip() or request.user.email
-        nombre = request.POST.get('nombre_cliente', '').strip() or request.user.get_full_name()
+        telefono = request.POST.get('telefono_usuario', request.POST.get('telefono_cliente', '')).strip()
+        correo = request.POST.get('correo_usuario', request.POST.get('correo_cliente', '')).strip() or request.user.email
+        nombre = request.POST.get('nombre_usuario', request.POST.get('nombre_cliente', '')).strip() or request.user.get_full_name()
         observacion = request.POST.get('observacion', '').strip()
 
         # Valores ya elegidos, para no perderlos si hay que volver a mostrar el formulario
@@ -291,9 +286,9 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
             'barberos': barberos,
             'turnos_disponibles': turnos_disponibles,
             'action_url': action_url,
-            'nombre_cliente_val': nombre,
-            'correo_cliente_val': correo,
-            'telefono_cliente_val': telefono,
+            'nombre_usuario_val': nombre,
+            'correo_usuario_val': correo,
+            'telefono_usuario_val': telefono,
             'barbero_id_val': barbero_id_sel,
             'turno_id_val': turno_id,
             'medio_pago_val': medio_pago_sel,
@@ -409,17 +404,8 @@ def crear_reserva(request, servicio_id=None, promocion_id=None):
         'barberos': barberos,
         'turnos_disponibles': turnos_disponibles,
         'action_url': action_url,
-        'nombre_cliente_val': (
-            request.user.get_full_name()
-            if request.user.is_authenticated else ''
-        ),
-        'correo_cliente_val': (
-            request.user.email if request.user.is_authenticated else ''
-        ),
-        'telefono_cliente_val': (
-            request.user.telefono if request.user.is_authenticated else ''
-        ),
-        'medio_pago_val': 'presencial',
+        'nombre_cliente_val': request.user.get_full_name() if request.user.is_authenticated else '',
+        'correo_cliente_val': request.user.email if request.user.is_authenticated else '',
     }
 
     return render(request, 'reservas/reservas.html', context)

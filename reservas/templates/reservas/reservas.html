@@ -184,11 +184,11 @@
           <div class="col-md-6">
             <label class="form-label fw-bold text-white mb-2"><i class="bi bi-person me-2 text-accent"></i>Nombre
               completo</label>
-            <input name="nombre_cliente" type="text" class="form-control form-control-lg form-control-barber"
+            <input name="nombre_usuario" type="text" class="form-control form-control-lg form-control-barber"
               placeholder="Ej: Juan Pérez" required
               pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\-\s]{3,100}"
               title="Ingresa un nombre válido: solo letras y espacios, mínimo 3 caracteres."
-              value="{{ nombre_cliente_val|default_if_none:'' }}" />
+              value="{{ nombre_usuario_val|default_if_none:'' }}" />
             <small class="text-custom-muted mt-1 d-block reservas-reservas__small-27">Ingresa tu nombre para
               identificarte al llegar. Verifica bien los datos ingresados porque estos serán usados para enviarte
               recordatorios y contactarte.</small>
@@ -197,9 +197,9 @@
           <div class="col-md-6">
             <label class="form-label fw-bold text-white mb-2"><i class="bi bi-envelope me-2 text-accent"></i>Correo
               electrónico</label>
-            <input name="correo_cliente" type="email" class="form-control form-control-lg form-control-barber"
+            <input name="correo_usuario" type="email" class="form-control form-control-lg form-control-barber"
               placeholder="Ej: tu-correo@email.com" required
-              value="{{ correo_cliente_val|default_if_none:'' }}" />
+              value="{{ correo_usuario_val|default_if_none:'' }}" />
             <small class="text-custom-muted mt-1 d-block reservas-reservas__small-28">Te enviaremos los detalles de tu
               cita por este medio. Verifica bien los datos ingresados porque estos serán usados para enviarte
               recordatorios y contactarte.</small>
@@ -208,11 +208,11 @@
           <div class="col-md-12">
             <label class="form-label fw-bold text-white mb-2"><i class="bi bi-telephone me-2 text-accent"></i>Número de
               celular</label>
-            <input name="telefono_cliente" type="tel" class="form-control form-control-lg form-control-barber"
+            <input name="telefono_usuario" type="tel" class="form-control form-control-lg form-control-barber"
               placeholder="Ej: 300 123 4567" pattern="3[0-9]{9}" maxlength="10"
               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
               title="Ingresa un celular colombiano válido: 10 dígitos, debe empezar por 3" required
-              value="{{ telefono_cliente_val|default_if_none:'' }}" />
+              value="{{ telefono_usuario_val|default_if_none:'' }}" />
             <small class="text-custom-muted mt-1 d-block reservas-reservas__small-29">Un número válido por si
               necesitamos contactarte sobre tu turno. Verifica bien los datos ingresados porque estos serán usados
               para enviarte recordatorios y contactarte.</small>

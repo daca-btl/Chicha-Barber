@@ -119,20 +119,20 @@
                             <input type="number" name="hora_fin" class="form-control custom-white-input" value="18" min="0" max="23">
                         </div>
                     </div>
-                    <!-- Sección de Almuerzo Limpia y Clara -->
-                    <div class="row bg-light p-2 rounded mb-3 border border-light-subtle mx-0">
-                        <div class="col-12 px-1">
-                            <label class="form-label fw-bold text-primary small text-uppercase mb-2">Excluir Hora de Almuerzo (Opcional)</label>
-                        </div>
-                        <div class="col-md-6 mb-2 px-1">
-                            <label class="small text-secondary">Inicio Almuerzo</label>
-                            <input type="number" name="h_almuerzo_inicio" class="form-control form-control-sm custom-white-input" placeholder="Ej: 13" min="0" max="23">
-                        </div>
-                        <div class="col-md-6 mb-2 px-1">
-                            <label class="small text-secondary">Fin Almuerzo</label>
-                            <input type="number" name="h_almuerzo_fin" class="form-control form-control-sm custom-white-input" placeholder="Ej: 14" min="0" max="23">
-                        </div>
-                    </div>
+<!-- Sección de Almuerzo (adaptable a modo claro y oscuro) -->
+    <div class="row p-2 rounded mb-3 mx-0 reservas-gestion-turno__almuerzo">
+            <div class="col-12 px-1">
+            <label class="form-label fw-bold text-primary small text-uppercase mb-2">Excluir Hora de Almuerzo (Opcional)</label>
+        </div>
+        <div class="col-md-6 mb-2 px-1">
+            <label class="small text-secondary">Inicio Almuerzo</label>
+            <input type="number" name="h_almuerzo_inicio" class="form-control form-control-sm custom-white-input" placeholder="Ej: 13" min="0" max="23">
+        </div>
+        <div class="col-md-6 mb-2 px-1">
+            <label class="small text-secondary">Fin Almuerzo</label>
+            <input type="number" name="h_almuerzo_fin" class="form-control form-control-sm custom-white-input" placeholder="Ej: 14" min="0" max="23">
+        </div>
+    </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-secondary small text-uppercase">Duración de cada Turno</label>
                         <select name="duracion" class="form-select custom-white-input">
